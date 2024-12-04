@@ -20,6 +20,10 @@ if ! check_command "tree"; then
     MISSING_PACKAGES+=("tree")
 fi
 
+if ! check_command "realpath"; then
+    MISSING_PACKAGES+=("realpath")
+fi
+
 # Если есть отсутствующие пакеты, пытаемся установить их
 if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
     echo "Необходимые пакеты не найдены: ${MISSING_PACKAGES[@]}"
@@ -41,6 +45,9 @@ if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
                 ;;
             tree)
                 COMMAND_NAME="tree"
+                ;;
+            realpath)
+                COMMAND_NAME="realpath"
                 ;;
             *)
                 COMMAND_NAME="$PACKAGE"
