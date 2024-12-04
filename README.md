@@ -30,7 +30,10 @@
 
 Если ваш проект еще не создан и не подключен к Git:
 
-`mkdir -p /path/to/your/project/ git init`
+```
+mkdir -p /path/to/your/project/
+git init
+```
 
 ### Использование существующего проекта
 
@@ -42,7 +45,10 @@
 
 Рекомендуется разместить скрипт в директории `./scripts/` вашего проекта:
 
-`mkdir -p scripts cd scripts`
+```
+mkdir -p scripts
+cd scripts
+```
 
 ### Настройка Git для автоматического преобразования перевода строки
 
@@ -54,13 +60,19 @@
 
 Чтобы добавить **Code Grabber MD** в свой проект в качестве подмодуля, выполните:
 
-`git submodule add https://github.com/AlexReplicator/code-grabber-md.git scripts/code-grabber-md`
+```
+git submodule add https://github.com/AlexReplicator/code-grabber-md.git scripts/code-grabber-md
+```
 
 ### Запуск и конвертирование
 
 Нужно установить `dos2unix` и преобразовать файл. Это можно сделать так:
 
-`sudo apt install dos2unix dos2unix scripts/code-grabber-md/grabber.sh`
+```
+sudo apt install dos2unix
+dos2unix scripts/code-grabber-md/grabber.sh
+```
+
 
 Сделайте файл скрипта исполняемым:
 
@@ -89,7 +101,11 @@
 
 Например:
 
-`scripts/code-grabber-md/README.md scripts/code-grabber-md/LICENSE.txt scripts/code-grabber-md/.gitattributes`
+```
+scripts/code-grabber-md/README.md
+scripts/code-grabber-md/LICENSE.txt
+scripts/code-grabber-md/.gitattributes
+```
 
 ## Удаление и обновление
 
@@ -111,7 +127,12 @@
 
 Для обновления только этого подмодуля:
 
-`git submodule update --init --recursive scripts/code-grabber-md git submodule status scripts/code-grabber-md cd scripts/code-grabber-md git pull origin main`
+```
+git submodule update --init --recursive scripts/code-grabber-md 
+git submodule status scripts/code-grabber-md 
+cd scripts/code-grabber-md 
+git pull origin main
+```
 
 ## Сценарии использования
 
