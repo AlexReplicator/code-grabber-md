@@ -176,4 +176,11 @@ echo "#### Статистика" >> "$OUTPUT"
 echo "Количество символов в итоговом файле: $TOTAL_CHARS знаков." >> "$OUTPUT"
 echo "Символов без пробелов: $TOTAL_CHARS_NO_SPACES знаков." >> "$OUTPUT"
 echo "---" >> "$OUTPUT"
+
+echo "PROJECT_ROOT: $PROJECT_ROOT"
+echo "EXCLUSION_FILE: $EXCLUSION_FILE"
+echo "RELATIVE_SCRIPT_DIR: $RELATIVE_SCRIPT_DIR"
+echo "IGNORE_DIR_PATTERN: $IGNORE_DIR_PATTERN"
+echo "RG_CMD: ${RG_CMD[@]}"
+
 echo "Содержимое всех файлов сохранено в $OUTPUT"
