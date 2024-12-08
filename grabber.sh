@@ -78,75 +78,71 @@ OUTPUT_PATH=$(realpath "$OUTPUT")
 # Очистим файл вывода перед началом
 > "$OUTPUT"
 
-# Функция для поиска корня проекта (директории, содержащей .gitignore, но не в той же папке, что и скрипт)
+# Функция для поиска корня проекта
 find_project_root() {
     dir="$1"
     script_dir="$2"
     while [ "$dir" != "/" ]; do
+        # Сначала проверяем наличие exclude.conf
+        if [ -f "$dir/exclude.conf" ] && [ "$dir" != "$script_dir" ]; then
+            echo "$dir"
+            return
+        fi
+        # Затем проверяем наличие .gitignore
         if [ -f "$dir/.gitignore" ] && [ "$dir" != "$script_dir" ]; then
             echo "$dir"
             return
         fi
         dir=$(dirname "$dir")
     done
-    # Если .gitignore не найден, возвращаем оригинальную директорию
+    # Если ни exclude.conf, ни .gitignore не найдены, возвращаем исходную директорию
     echo "$1"
 }
 
-# Находим корень проекта, игнорируя .gitignore в директории скрипта
+# Находим корень проекта
 PROJECT_ROOT=$(find_project_root "$DIRECTORY" "$SCRIPT_DIR")
 
-# Путь к exclude.conf
-EXCLUDE_CONF="$PROJECT_ROOT/exclude.conf"
-
-# Проверяем наличие exclude.conf
-if [ -f "$EXCLUDE_CONF" ]; then
-    echo "Используем exclude.conf для исключений."
-    EXCLUSION_FILE="$EXCLUDE_CONF"
+# Определяем файл исключений
+if [ -f "$PROJECT_ROOT/exclude.conf" ]; then
+    EXCLUDE_FILE="$PROJECT_ROOT/exclude.conf"
+    USE_EXCLUDE_CONF=true
+elif [ -f "$PROJECT_ROOT/.gitignore" ]; then
+    EXCLUDE_FILE="$PROJECT_ROOT/.gitignore"
+    USE_EXCLUDE_CONF=false
 else
-    echo "exclude.conf не найден. Используем .gitignore для исключений."
-    EXCLUSION_FILE="$PROJECT_ROOT/.gitignore"
-fi
-
-# Определяем относительный путь директории скрипта относительно корня проекта
-RELATIVE_SCRIPT_DIR=$(realpath --relative-to="$PROJECT_ROOT" "$SCRIPT_DIR")
-
-# Проверяем, находится ли директория скрипта внутри корня проекта
-IGNORE_DIR_PATTERN=""
-if [[ "$RELATIVE_SCRIPT_DIR" != "." && "$RELATIVE_SCRIPT_DIR" != /* && "$RELATIVE_SCRIPT_DIR" != ".." ]]; then
-    # Формируем паттерн для игнорирования директории скрипта
-    IGNORE_DIR_PATTERN="$RELATIVE_SCRIPT_DIR/**"
-    echo "Исключаем директорию скрипта: $IGNORE_DIR_PATTERN"
+    EXCLUDE_FILE=""
 fi
 
 # Добавляем структуру каталога в начало файла
 echo "### Структура каталога относительно '$DIRECTORY'" >> "$OUTPUT"
 
 echo "" >> "$OUTPUT"
-echo "```" >> "$OUTPUT"
+echo "\`\`\`" >> "$OUTPUT"
 tree "$DIRECTORY" >> "$OUTPUT"
-echo "```" >> "$OUTPUT"
+echo "\`\`\`" >> "$OUTPUT"
 echo "" >> "$OUTPUT"
 echo "---" >> "$OUTPUT"
 echo "" >> "$OUTPUT"
 
-# Формируем команду rg
-if [ -n "$IGNORE_DIR_PATTERN" ]; then
-    RG_CMD=(rg --files "$PROJECT_ROOT" --ignore-file "$EXCLUSION_FILE" --ignore "$IGNORE_DIR_PATTERN")
-else
-    RG_CMD=(rg --files "$PROJECT_ROOT" --ignore-file "$EXCLUSION_FILE")
+# Формируем опции для ripgrep
+RG_OPTIONS=("--files")
+
+# Добавляем --ignore-file, если есть файл исключений
+if [ -n "$EXCLUDE_FILE" ]; then
+    RG_OPTIONS+=("--ignore-file" "$EXCLUDE_FILE")
 fi
 
-# Выполняем rg и обрабатываем файлы
-"${RG_CMD[@]}" | while IFS= read -r FILE; do
-    # Пропускаем сам скрипт и файл вывода
-    if [ "$FILE" = "$SCRIPT_PATH" ] || [ "$FILE" = "$OUTPUT_PATH" ]; then
-        continue
-    fi
+# Исключаем директорию скрипта
+REL_SCRIPT_DIR=${SCRIPT_DIR#"$PROJECT_ROOT/"}
+if [ -n "$REL_SCRIPT_DIR" ] && [ "$REL_SCRIPT_DIR" != "$PROJECT_ROOT" ]; then
+    RG_OPTIONS+=("--glob" "!$REL_SCRIPT_DIR/**")
+fi
 
-    # Проверяем, находится ли файл внутри DIRECTORY или PROJECT_ROOT
-    if [[ "$DIRECTORY" != "$PROJECT_ROOT" && "$FILE" != "$DIRECTORY/"* ]]; then
-        continue
+# Используем rg для получения списка файлов с учетом исключений
+rg "${RG_OPTIONS[@]}" "$DIRECTORY" | while IFS= read -r FILE; do
+    # Пропускаем сам скрипт и файл вывода
+    if [ "$FILE" = "$SCRIPT_PATH" ] || [ "$FILE" = "$OUTPUT_PATH" ] || [ "$FILE" = "$EXCLUDE_FILE" ]; then
+         continue
     fi
 
     # Проверяем, является ли файл текстовым
@@ -155,10 +151,10 @@ fi
         RELATIVE_FILE=${FILE#"$DIRECTORY/"}
 
         echo "#### Файл: *$RELATIVE_FILE*" >> "$OUTPUT"
-        echo "```" >> "$OUTPUT"
+        echo "\`\`\`" >> "$OUTPUT"
         # Добавляем четыре пробела перед каждой строкой содержимого файла
         awk '{print "    " $0}' "$FILE" >> "$OUTPUT"
-        echo "```" >> "$OUTPUT"
+        echo "\`\`\`" >> "$OUTPUT"
         echo "" >> "$OUTPUT"
         echo "---" >> "$OUTPUT"
     else
@@ -176,11 +172,4 @@ echo "#### Статистика" >> "$OUTPUT"
 echo "Количество символов в итоговом файле: $TOTAL_CHARS знаков." >> "$OUTPUT"
 echo "Символов без пробелов: $TOTAL_CHARS_NO_SPACES знаков." >> "$OUTPUT"
 echo "---" >> "$OUTPUT"
-
-echo "PROJECT_ROOT: $PROJECT_ROOT"
-echo "EXCLUSION_FILE: $EXCLUSION_FILE"
-echo "RELATIVE_SCRIPT_DIR: $RELATIVE_SCRIPT_DIR"
-echo "IGNORE_DIR_PATTERN: $IGNORE_DIR_PATTERN"
-echo "RG_CMD: ${RG_CMD[@]}"
-
 echo "Содержимое всех файлов сохранено в $OUTPUT"

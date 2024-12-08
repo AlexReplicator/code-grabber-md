@@ -22,7 +22,7 @@
 
 ## Описание
 
-**Code Grabber MD** — это Bash-скрипт, который сканирует указанный каталог, собирает содержимое всех текстовых файлов и сохраняет их в файл `output.md`. При этом учитываются правила из файла `.gitignore` корневого каталога проекта. Это удобно для документирования, анализа кода или создания сводных файлов с исходным кодом.
+**Code Grabber MD** — это Bash-скрипт, который сканирует указанный каталог, собирает содержимое всех текстовых файлов и сохраняет их в файл `output.md`. При этом учитываются правила из файла `exclude.conf` или `.gitignore` корневого каталога проекта. Это удобно для документирования, анализа кода или создания сводных файлов с исходным кодом.
 
 ## Подготовительный этап
 
@@ -41,7 +41,26 @@ git init
 
 `cd /path/to/your/project/`
 
+### Настройка Git для автоматического преобразования перевода строки
+
+Создайте файл `.gitattributes` в корневой директории проекта с следующим содержимым:
+
+`* text=auto`
+
 ## Установка
+
+Сначала надо создать файл `excude.conf` в корневой директории проекта. Этот файл будет содержать список исключений, которые не будут включены в выходной файл.
+
+**Пример файла  `excude.conf`:**
+
+```
+# Исключить директорию node_modules
+node_modules
+
+# Исключить файл text.txt
+text.txt
+```
+
 
 Рекомендуется разместить скрипт в директории `./scripts/` вашего проекта:
 
@@ -49,12 +68,6 @@ git init
 mkdir -p scripts
 cd scripts
 ```
-
-### Настройка Git для автоматического преобразования перевода строки
-
-Создайте файл `.gitattributes` в корневой директории проекта с следующим содержимым:
-
-`* text=auto`
 
 ### Добавление в качестве подмодуля Git
 
@@ -97,15 +110,6 @@ dos2unix scripts/code-grabber-md/grabber.sh
 
 Скрипт будет сканировать каталог `/path/to/your/project/` и собирать содержимое всех текстовых файлов в `output.md`.
 
-> **Примечание:** Если вы не хотите, чтобы контент файлов подмодуля (README.md и LICENSE.txt) попадали в конечный файл, то нужно указать путь к ним в файле `.gitignore` в вашем проекте.
-
-Например:
-
-```
-scripts/code-grabber-md/README.md
-scripts/code-grabber-md/LICENSE.txt
-scripts/code-grabber-md/.gitattributes
-```
 
 ## Удаление и обновление
 
@@ -120,19 +124,10 @@ scripts/code-grabber-md/.gitattributes
 Сначала переходим в основную папку проекта
 
 ```
-# Удалить подмодуль из .gitmodules
 git config -f .gitmodules --remove-section submodule.scripts/code-grabber-md
-
-# Удалить подмодуль из .git/config
 git config -f .git/config --remove-section submodule.scripts/code-grabber-md
-
-# Удалить подмодуль из индекса
 git rm --cached scripts/code-grabber-md
-
-# Удалить физическую папку подмодуля
 rm -rf scripts/code-grabber-md
-
-# Удалить данные подмодуля из .git/modules
 rm -rf .git/modules/scripts/code-grabber-md
 ```
 
@@ -145,9 +140,6 @@ rm -rf .git/modules/scripts/code-grabber-md
 ```
 git submodule update --init --recursive --force
 git submodule update --init --recursive
-dos2unix scripts/code-grabber-md/grabber.sh
-chmod +x scripts/code-grabber-md/grabber.sh
-./scripts/code-grabber-md/grabber.sh
 ```
 
 #### Только этот подмодуль
