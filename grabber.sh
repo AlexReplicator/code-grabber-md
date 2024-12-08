@@ -99,20 +99,6 @@ PROJECT_ROOT=$(find_project_root "$DIRECTORY" "$SCRIPT_DIR")
 # Путь к exclude.conf
 EXCLUDE_CONF="$PROJECT_ROOT/exclude.conf"
 
-# Функция для определения списка игнорируемых директорий
-get_ignore_dirs() {
-    # Определяем относительный путь директории скрипта относительно корня проекта
-    RELATIVE_SCRIPT_DIR=$(realpath --relative-to="$PROJECT_ROOT" "$SCRIPT_DIR")
-
-    # Если скрипт находится внутри корневой директории проекта
-    if [[ "$RELATIVE_SCRIPT_DIR" != "." && "$RELATIVE_SCRIPT_DIR" != ".." && "$RELATIVE_SCRIPT_DIR" != /* ]]; then
-        echo "$RELATIVE_SCRIPT_DIR"
-    fi
-}
-
-# Получаем директорию скрипта для исключения
-IGNORE_DIR=$(get_ignore_dirs)
-
 # Проверяем наличие exclude.conf
 if [ -f "$EXCLUDE_CONF" ]; then
     echo "Используем exclude.conf для исключений."
@@ -122,13 +108,14 @@ else
     EXCLUSION_FILE="$PROJECT_ROOT/.gitignore"
 fi
 
-# Получаем список дополнительных директорий для игнорирования (директория скрипта)
-if [ -n "$IGNORE_DIR" ]; then
-    IGNORE_DIR_OPTION="--ignore-dir=$IGNORE_DIR"
-    echo "Исключаем директорию скрипта: $IGNORE_DIR"
-else
-    # Если скрипт находится в корне проекта, исключаем только скрипт и файл вывода
-    echo "Скрипт находится в корне проекта. Исключаем только скрипт и файл вывода."
+# Определяем относительный путь директории скрипта относительно корня проекта
+RELATIVE_SCRIPT_DIR=$(realpath --relative-to="$PROJECT_ROOT" "$SCRIPT_DIR")
+
+# Проверяем, находится ли директория скрипта внутри корня проекта
+IGNORE_DIR_OPTION=""
+if [[ "$RELATIVE_SCRIPT_DIR" != "." && "$RELATIVE_SCRIPT_DIR" != /* && "$RELATIVE_SCRIPT_DIR" != .. ]]; then
+    IGNORE_DIR_OPTION="--ignore-dir=$RELATIVE_SCRIPT_DIR"
+    echo "Исключаем директорию скрипта: $RELATIVE_SCRIPT_DIR"
 fi
 
 # Добавляем структуру каталога в начало файла
