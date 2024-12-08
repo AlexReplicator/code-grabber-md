@@ -66,7 +66,6 @@ text.txt
 
 ```
 mkdir -p scripts
-cd scripts
 ```
 
 ### Добавление в качестве подмодуля Git
