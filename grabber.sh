@@ -95,6 +95,15 @@ find_project_root() {
 # Находим корень проекта, игнорируя .gitignore в директории скрипта
 PROJECT_ROOT=$(find_project_root "$DIRECTORY" "$SCRIPT_DIR")
 
+# Путь к exclude.conf
+EXCLUDE_CONF="$SCRIPT_DIR/exclude.conf"
+
+# Проверяем наличие exclude.conf
+if [ ! -f "$EXCLUDE_CONF" ]; then
+    echo "Ошибка: файл исключений exclude.conf не найден в директории скрипта."
+    exit 1
+fi
+
 # Добавляем структуру каталога в начало файла
 echo "### Структура каталога относительно '$DIRECTORY'" >> "$OUTPUT"
 
@@ -106,8 +115,21 @@ echo "" >> "$OUTPUT"
 echo "---" >> "$OUTPUT"
 echo "" >> "$OUTPUT"
 
-# Используем rg для получения списка файлов с учётом .gitignore из PROJECT_ROOT
-rg --files "$DIRECTORY" --ignore-file "$PROJECT_ROOT/.gitignore" | while IFS= read -r FILE; do
+# Используем rg для получения списка файлов с учётом exclude.conf из PROJECT_ROOT
+rg --files "$PROJECT_ROOT" --ignore-file "$EXCLUDE_CONF" | while IFS= read -r FILE; do
+    # Проверяем, находится ли файл в указанной директории
+    if [[ "$FILE" != "$PROJECT_ROOT/"* ]]; then
+        continue
+    fi
+
+    # Приводим файл к относительному пути от PROJECT_ROOT
+    RELATIVE_FILE=${FILE#"$PROJECT_ROOT/"}
+
+    # Проверяем, находится ли файл в DIRECTORY или его поддиректориях
+    if [[ "$RELATIVE_FILE" != "${DIRECTORY#$PROJECT_ROOT}/"* && "$PROJECT_ROOT" != "$DIRECTORY" ]]; then
+        continue
+    fi
+
     # Пропускаем сам скрипт и файл вывода
     if [ "$FILE" = "$SCRIPT_PATH" ] || [ "$FILE" = "$OUTPUT_PATH" ]; then
         continue
