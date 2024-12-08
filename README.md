@@ -142,7 +142,13 @@ rm -rf .git/modules/scripts/code-grabber-md
 
 Для обновления всех подмодулей до последней версии:
 
-`git submodule update --init --recursive`
+```
+git submodule update --init --recursive --force
+git submodule update --init --recursive
+dos2unix scripts/code-grabber-md/grabber.sh
+chmod +x scripts/code-grabber-md/grabber.sh
+./scripts/code-grabber-md/grabber.sh
+```
 
 #### Только этот подмодуль
 
@@ -153,6 +159,10 @@ git submodule update --init --recursive scripts/code-grabber-md
 git submodule status scripts/code-grabber-md 
 cd scripts/code-grabber-md 
 git pull origin main
+cd ../../
+dos2unix scripts/code-grabber-md/grabber.sh
+chmod +x scripts/code-grabber-md/grabber.sh
+./scripts/code-grabber-md/grabber.sh
 ```
 
 ## Сценарии использования
