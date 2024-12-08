@@ -104,6 +104,25 @@ if [ ! -f "$EXCLUDE_CONF" ]; then
     exit 1
 fi
 
+# Определяем относительный путь директории скрипта относительно корня проекта
+RELATIVE_SCRIPT_DIR=$(realpath --relative-to="$PROJECT_ROOT" "$SCRIPT_DIR")
+
+# Проверяем, находится ли директория скрипта внутри корня проекта
+if [[ "$RELATIVE_SCRIPT_DIR" == "$PROJECT_ROOT" || "$RELATIVE_SCRIPT_DIR" == /* ]]; then
+    echo "Ошибка: не удалось определить относительный путь директории скрипта относительно корня проекта."
+    exit 1
+fi
+
+# Если скрипт находится внутри корня проекта, добавляем его директорию в список игнорируемых
+IGNORE_DIR_OPTION=""
+if [ "$RELATIVE_SCRIPT_DIR" != "." ]; then
+    IGNORE_DIR_OPTION="--ignore-dir=$RELATIVE_SCRIPT_DIR"
+else
+    # Если скрипт находится в корне проекта, нельзя игнорировать '.', поэтому будем игнорировать только файлы и поддиректории
+    echo "Скрипт находится в корне проекта. Все файлы и директории рядом с ним будут автоматически игнорироваться."
+    IGNORE_DIR_OPTION=""
+fi
+
 # Добавляем структуру каталога в начало файла
 echo "### Структура каталога относительно '$DIRECTORY'" >> "$OUTPUT"
 
@@ -115,8 +134,14 @@ echo "" >> "$OUTPUT"
 echo "---" >> "$OUTPUT"
 echo "" >> "$OUTPUT"
 
-# Используем rg для получения списка файлов с учётом exclude.conf из PROJECT_ROOT
-rg --files "$PROJECT_ROOT" --ignore-file "$EXCLUDE_CONF" | while IFS= read -r FILE; do
+# Используем rg для получения списка файлов с учётом exclude.conf из PROJECT_ROOT и исключаем директорию скрипта
+if [ -n "$IGNORE_DIR_OPTION" ]; then
+    rg_cmd=(rg --files "$PROJECT_ROOT" --ignore-file "$EXCLUDE_CONF" "$IGNORE_DIR_OPTION")
+else
+    rg_cmd=(rg --files "$PROJECT_ROOT" --ignore-file "$EXCLUDE_CONF")
+fi
+
+"${rg_cmd[@]}" | while IFS= read -r FILE; do
     # Проверяем, находится ли файл в указанной директории
     if [[ "$FILE" != "$PROJECT_ROOT/"* ]]; then
         continue
