@@ -115,6 +115,27 @@ scripts/code-grabber-md/.gitattributes
 
 `sudo apt purge tree ripgrep && sudo apt autoremove`
 
+### Полное удаление подмодуля
+
+Сначала переходим в основную папку проекта
+
+```
+# Удалить подмодуль из .gitmodules
+git config -f .gitmodules --remove-section submodule.scripts/code-grabber-md
+
+# Удалить подмодуль из .git/config
+git config -f .git/config --remove-section submodule.scripts/code-grabber-md
+
+# Удалить подмодуль из индекса
+git rm --cached scripts/code-grabber-md
+
+# Удалить физическую папку подмодуля
+rm -rf scripts/code-grabber-md
+
+# Удалить данные подмодуля из .git/modules
+rm -rf .git/modules/scripts/code-grabber-md
+```
+
 ### Обновление подмодуля
 
 #### Все подмодули
