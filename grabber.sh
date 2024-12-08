@@ -112,41 +112,40 @@ fi
 RELATIVE_SCRIPT_DIR=$(realpath --relative-to="$PROJECT_ROOT" "$SCRIPT_DIR")
 
 # Проверяем, находится ли директория скрипта внутри корня проекта
-IGNORE_DIR_OPTION=""
+IGNORE_DIR_PATTERN=""
 if [[ "$RELATIVE_SCRIPT_DIR" != "." && "$RELATIVE_SCRIPT_DIR" != /* && "$RELATIVE_SCRIPT_DIR" != ".." ]]; then
+    # Формируем паттерн для игнорирования директории скрипта
     IGNORE_DIR_PATTERN="$RELATIVE_SCRIPT_DIR/**"
-    IGNORE_DIR_OPTION="--ignore \"$IGNORE_DIR_PATTERN\""
-    echo "Исключаем директорию скрипта: $RELATIVE_SCRIPT_DIR"
+    echo "Исключаем директорию скрипта: $IGNORE_DIR_PATTERN"
 fi
 
 # Добавляем структуру каталога в начало файла
 echo "### Структура каталога относительно '$DIRECTORY'" >> "$OUTPUT"
 
 echo "" >> "$OUTPUT"
-echo "\`\`\`" >> "$OUTPUT"
+echo "```" >> "$OUTPUT"
 tree "$DIRECTORY" >> "$OUTPUT"
-echo "\`\`\`" >> "$OUTPUT"
+echo "```" >> "$OUTPUT"
 echo "" >> "$OUTPUT"
 echo "---" >> "$OUTPUT"
 echo "" >> "$OUTPUT"
 
 # Формируем команду rg
-if [ -n "$IGNORE_DIR_OPTION" ]; then
-    # Используем eval для правильного интерпретирования кавычек
-    RG_CMD="rg --files \"$PROJECT_ROOT\" --ignore-file \"$EXCLUSION_FILE\" --ignore \"$RELATIVE_SCRIPT_DIR/**\""
+if [ -n "$IGNORE_DIR_PATTERN" ]; then
+    RG_CMD=(rg --files "$PROJECT_ROOT" --ignore-file "$EXCLUSION_FILE" --ignore "$IGNORE_DIR_PATTERN")
 else
-    RG_CMD="rg --files \"$PROJECT_ROOT\" --ignore-file \"$EXCLUSION_FILE\""
+    RG_CMD=(rg --files "$PROJECT_ROOT" --ignore-file "$EXCLUSION_FILE")
 fi
 
 # Выполняем rg и обрабатываем файлы
-eval "$RG_CMD" | while IFS= read -r FILE; do
+"${RG_CMD[@]}" | while IFS= read -r FILE; do
     # Пропускаем сам скрипт и файл вывода
     if [ "$FILE" = "$SCRIPT_PATH" ] || [ "$FILE" = "$OUTPUT_PATH" ]; then
         continue
     fi
 
-    # Проверяем, находится ли файл внутри DIRECTORY
-    if [[ "$FILE" != "$DIRECTORY/"* && "$DIRECTORY" != "$PROJECT_ROOT" ]]; then
+    # Проверяем, находится ли файл внутри DIRECTORY или PROJECT_ROOT
+    if [[ "$DIRECTORY" != "$PROJECT_ROOT" && "$FILE" != "$DIRECTORY/"* ]]; then
         continue
     fi
 
@@ -156,10 +155,10 @@ eval "$RG_CMD" | while IFS= read -r FILE; do
         RELATIVE_FILE=${FILE#"$DIRECTORY/"}
 
         echo "#### Файл: *$RELATIVE_FILE*" >> "$OUTPUT"
-        echo "\`\`\`" >> "$OUTPUT"
+        echo "```" >> "$OUTPUT"
         # Добавляем четыре пробела перед каждой строкой содержимого файла
         awk '{print "    " $0}' "$FILE" >> "$OUTPUT"
-        echo "\`\`\`" >> "$OUTPUT"
+        echo "```" >> "$OUTPUT"
         echo "" >> "$OUTPUT"
         echo "---" >> "$OUTPUT"
     else
