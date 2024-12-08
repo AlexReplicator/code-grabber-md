@@ -114,7 +114,8 @@ RELATIVE_SCRIPT_DIR=$(realpath --relative-to="$PROJECT_ROOT" "$SCRIPT_DIR")
 # Проверяем, находится ли директория скрипта внутри корня проекта
 IGNORE_DIR_OPTION=""
 if [[ "$RELATIVE_SCRIPT_DIR" != "." && "$RELATIVE_SCRIPT_DIR" != /* && "$RELATIVE_SCRIPT_DIR" != ".." ]]; then
-    IGNORE_DIR_OPTION="--ignore=\"$RELATIVE_SCRIPT_DIR/\""
+    IGNORE_DIR_PATTERN="$RELATIVE_SCRIPT_DIR/**"
+    IGNORE_DIR_OPTION="--ignore \"$IGNORE_DIR_PATTERN\""
     echo "Исключаем директорию скрипта: $RELATIVE_SCRIPT_DIR"
 fi
 
@@ -129,15 +130,16 @@ echo "" >> "$OUTPUT"
 echo "---" >> "$OUTPUT"
 echo "" >> "$OUTPUT"
 
-# Формируем команду rg с учетом исключений
+# Формируем команду rg
 if [ -n "$IGNORE_DIR_OPTION" ]; then
-    RG_CMD=(rg --files "$PROJECT_ROOT" --ignore-file "$EXCLUSION_FILE" --ignore-dir="$RELATIVE_SCRIPT_DIR")
+    # Используем eval для правильного интерпретирования кавычек
+    RG_CMD="rg --files \"$PROJECT_ROOT\" --ignore-file \"$EXCLUSION_FILE\" --ignore \"$RELATIVE_SCRIPT_DIR/**\""
 else
-    RG_CMD=(rg --files "$PROJECT_ROOT" --ignore-file "$EXCLUSION_FILE")
+    RG_CMD="rg --files \"$PROJECT_ROOT\" --ignore-file \"$EXCLUSION_FILE\""
 fi
 
 # Выполняем rg и обрабатываем файлы
-"${RG_CMD[@]}" | while IFS= read -r FILE; do
+eval "$RG_CMD" | while IFS= read -r FILE; do
     # Пропускаем сам скрипт и файл вывода
     if [ "$FILE" = "$SCRIPT_PATH" ] || [ "$FILE" = "$OUTPUT_PATH" ]; then
         continue
